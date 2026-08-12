@@ -2,7 +2,7 @@ raw_token,n_products,canonical,action,reason
 musk,12704,musk,KEEP,"REVIEW: word-containment overlap with ['black musk', 'cashmere musk', 'egyptian musk', 'gray musk', 'island musk'] (+5 more) -- not auto-merged, verify manually"
 bergamot,9523,bergamot,KEEP,"REVIEW: word-containment overlap with ['bergamot blossom', 'bergamot leaf', 'calabrian bergamot', 'rind bergamot', 'sicilian bergamot'] (+1 more) -- not auto-merged, verify manually"
 sandalwood,9149,sandalwood,KEEP,"REVIEW: word-containment overlap with ['australian sandalwood', 'indian sandalwood', 'madagascar sandalwood', 'mysore sandalwood', 'red sandalwood'] (+2 more) -- not auto-merged, verify manually"
-amber,8917,amber,KEEP,"REVIEW: word-containment overlap with ['amber oil', 'amber xtreme', 'black amber', 'blue amber', 'crystal amber'] (+3 more) -- not auto-merged, verify manually"
+amber,8917,amber,KEEP,"manual override: ambergris is animalic, a different material from the amber accord (vs 'ambergris'); manual override: amberwood is a distinct woody material, not a spelling variant of amber (vs 'amberwood'); REVIEW: word-containment overlap with ['amber oil', 'amber xtreme', 'black amber', 'blue amber', 'crystal amber'] (+3 more) -- not auto-merged, verify manually"
 vanilla,8839,vanilla,KEEP,"REVIEW: fuzzy-similar to 'vanille' (sim=0.86); REVIEW: word-containment overlap with ['black vanilla husk', 'bourbon vanilla', 'indian vanilla', 'madagascar vanilla', 'mexican vanilla'] (+11 more) -- not auto-merged, verify manually"
 patchouli,8487,patchouli,KEEP,"REVIEW: word-containment overlap with ['chinese patchouli', 'dark patchouli', 'indian patchouli', 'indonesian patchouli leaf', 'patchouli leaf'] (+2 more) -- not auto-merged, verify manually"
 jasmine,8242,jasmine,KEEP,"REVIEW: fuzzy-similar to 'jasmone' (sim=0.86); REVIEW: word-containment overlap with ['chinese jasmine', 'egyptian and indian jasmine', 'egyptian jasmine', 'false jasmine', 'hawaiian jasmine'] (+14 more) -- not auto-merged, verify manually"
@@ -10,7 +10,7 @@ rose,6615,rose,KEEP,"REVIEW: word-containment overlap with ['alba rose', 'baie r
 cedar,6216,cedar,KEEP,"REVIEW: word-containment overlap with ['atlas cedar', 'california cedar', 'cedar essence', 'cedar leaves', 'cedar needles'] (+10 more) -- not auto-merged, verify manually"
 vetiver,4618,vetiver,KEEP,"REVIEW: fuzzy-similar to 'vetyver' (sim=0.86); REVIEW: word-containment overlap with ['bourbon vetiver', 'haitian vetiver', 'java vetiver oil', 'madagascar vetiver', 'tahitian vetiver'] (+1 more) -- not auto-merged, verify manually"
 tonka bean,4199,tonka bean,KEEP,"REVIEW: word-containment overlap with ['tonka'] -- not auto-merged, verify manually"
-mandarin orange,4075,mandarin orange,KEEP,"REVIEW: word-containment overlap with ['mandarin', 'orange'] -- not auto-merged, verify manually"
+mandarin orange,4075,mandarin,MERGE,manual override: promoted from REVIEW
 pink pepper,3302,pink pepper,KEEP,"REVIEW: word-containment overlap with ['pepper'] -- not auto-merged, verify manually"
 orange blossom,3218,orange blossom,KEEP,"REVIEW: word-containment overlap with ['orange'] -- not auto-merged, verify manually"
 lemon,3216,lemon,KEEP,"REVIEW: word-containment overlap with ['amalfi lemon', 'argentinian lemon', 'californian lemon', 'candied lemon', 'hatkora lemon'] (+17 more) -- not auto-merged, verify manually"
@@ -44,7 +44,7 @@ woody notes,1643,,DROP_PLACEHOLDER,"category word, not a specific note (CLAUDE.m
 raspberry,1635,raspberry,KEEP,"REVIEW: word-containment overlap with ['raspberry bloom', 'raspberry blossom', 'raspberry leaf'] -- not auto-merged, verify manually"
 tuberose,1586,tuberose,KEEP,"REVIEW: word-containment overlap with ['egyptian tuberose', 'indian tuberose'] -- not auto-merged, verify manually"
 magnolia,1492,magnolia,KEEP,"REVIEW: fuzzy-similar to 'magnolan' (sim=0.88); REVIEW: word-containment overlap with ['chinese magnolia', 'magnolia leaf', 'magnolia petals', 'saucer magnolia', 'white magnolia'] -- not auto-merged, verify manually"
-ambergris,1473,amber,MERGE,compound substring containment
+ambergris,1473,ambergris,KEEP,"manual override: ambergris is animalic, a different material from the amber accord (vs 'amber')"
 black pepper,1412,black pepper,KEEP,"REVIEW: word-containment overlap with ['pepper'] -- not auto-merged, verify manually"
 heliotrope,1374,heliotrope,KEEP,"REVIEW: word-containment overlap with ['water heliotrope', 'white heliotrope'] -- not auto-merged, verify manually"
 apple,1253,apple,KEEP,"REVIEW: word-containment overlap with ['american apple', 'apple blossom', 'apple juice', 'apple leaf', 'apple licor'] (+16 more) -- not auto-merged, verify manually"
@@ -59,7 +59,7 @@ gardenia,1153,gardenia,KEEP,"REVIEW: word-containment overlap with ['black garde
 coriander,1097,coriander,KEEP,"REVIEW: word-containment overlap with ['coriander extract', 'coriander iandaldehydes', 'coriander leaf', 'green coriander'] -- not auto-merged, verify manually"
 citruses,1081,,DROP_PLACEHOLDER,"category word, not a specific note (CLAUDE.md section 1)"
 moss,1064,moss,KEEP,"REVIEW: word-containment overlap with ['oak moss'] -- not auto-merged, verify manually"
-virginia cedar,1051,virginia cedar,KEEP,"REVIEW: word-containment overlap with ['cedar'] -- not auto-merged, verify manually"
+virginia cedar,1051,cedar,MERGE,manual override: promoted from REVIEW
 violet leaf,1038,violet,MERGE,compound substring containment
 green notes,1030,,DROP_PLACEHOLDER,"category word, not a specific note (CLAUDE.md section 1)"
 jasmine sambac,987,jasmine,MERGE,compound substring containment
@@ -110,7 +110,7 @@ artemisia,538,artemisia,KEEP,
 lotus,536,lotus,KEEP,"REVIEW: word-containment overlap with ['blue lotus', 'indian lotus', 'japanese pink lotus', 'lotus leaf', 'lotus petals'] (+3 more) -- not auto-merged, verify manually"
 elemi,521,elemi,KEEP,"REVIEW: word-containment overlap with ['elemi resin'] -- not auto-merged, verify manually"
 sugar,518,sugar,KEEP,"REVIEW: word-containment overlap with ['brown sugar', 'burnt sugar', 'citruses with sugar', 'palm sugar', 'powdered sugar'] (+6 more) -- not auto-merged, verify manually"
-amberwood,515,amber,MERGE,compound substring containment
+amberwood,515,amberwood,KEEP,"manual override: amberwood is a distinct woody material, not a spelling variant of amber (vs 'amber')"
 turkish rose,514,turkish rose,KEEP,"REVIEW: fuzzy-similar to 'turkish rose oil' (sim=0.86); REVIEW: word-containment overlap with ['rose'] -- not auto-merged, verify manually"
 fig,492,fig,KEEP,"REVIEW: word-containment overlap with ['black fig', 'fig blossom', 'fig honey', 'fig leaf', 'fig milk'] (+3 more) -- not auto-merged, verify manually"
 red berries,490,red berries,KEEP,"REVIEW: word-containment overlap with ['berries'] -- not auto-merged, verify manually"
@@ -129,11 +129,11 @@ frangipani,460,frangipani,KEEP,
 passionfruit,450,passionfruit,KEEP,
 cacao,441,cacao,KEEP,"REVIEW: fuzzy-similar to 'curacao' (sim=0.83); REVIEW: word-containment overlap with ['cacao blossom', 'cacao butter', 'cacao pod'] -- not auto-merged, verify manually"
 juniper berries,430,juniper berries,KEEP,"REVIEW: fuzzy-similar to 'juniper berry' (sim=0.86); REVIEW: word-containment overlap with ['berries', 'juniper'] -- not auto-merged, verify manually"
-strawberry,430,strawberry,KEEP,"REVIEW: fuzzy-similar to 'strawberry jam' (sim=0.83); REVIEW: word-containment overlap with ['big strawberry', 'gariguette strawberry', 'strawberry fizz candy', 'strawberry flower', 'strawberry jam'] (+5 more) -- not auto-merged, verify manually"
+strawberry,430,strawberry,KEEP,"manual override: straw (dried grass) is a different material from the strawberry fruit (vs 'straw'); REVIEW: fuzzy-similar to 'strawberry jam' (sim=0.83); REVIEW: word-containment overlap with ['big strawberry', 'gariguette strawberry', 'strawberry fizz candy', 'strawberry flower', 'strawberry jam'] (+5 more) -- not auto-merged, verify manually"
 clove,426,cloves,MERGE,fuzzy similarity 0.91
 green apple,421,green apple,KEEP,"REVIEW: fuzzy-similar to 'green grape' (sim=0.82); REVIEW: word-containment overlap with ['apple'] -- not auto-merged, verify manually"
 blackberry,415,blackberry,KEEP,"REVIEW: fuzzy-similar to 'black cherry' (sim=0.82); REVIEW: word-containment overlap with ['blackberry blossom', 'blackberry leaf'] -- not auto-merged, verify manually"
-mango,411,mango,KEEP,"REVIEW: word-containment overlap with ['frosted mango', 'green mango', 'indian mango', 'mango blossom', 'mango tree'] (+1 more) -- not auto-merged, verify manually"
+mango,411,mango,KEEP,"manual override: mangosteen is a botanically unrelated fruit despite the name (vs 'mangosteen'); REVIEW: word-containment overlap with ['frosted mango', 'green mango', 'indian mango', 'mango blossom', 'mango tree'] (+1 more) -- not auto-merged, verify manually"
 rhubarb,405,rhubarb,KEEP,"REVIEW: fuzzy-similar to 'rhuburb' (sim=0.86); REVIEW: word-containment overlap with ['rhubarb leaf'] -- not auto-merged, verify manually"
 water lily,402,water lily,KEEP,"REVIEW: fuzzy-similar to 'white lily' (sim=0.80); REVIEW: word-containment overlap with ['lily', 'water'] -- not auto-merged, verify manually"
 cherry,399,cherry,KEEP,"REVIEW: word-containment overlap with ['black cherry', 'burning cherry', 'cherry blossom', 'cherry extract', 'cherry jam'] (+10 more) -- not auto-merged, verify manually"
@@ -295,7 +295,7 @@ mahogany,123,mahogany,KEEP,"REVIEW: fuzzy-similar to 'mahoganywood' (sim=0.80) -
 pine tree,123,pine tree,KEEP,"REVIEW: fuzzy-similar to 'pine tar' (sim=0.82); REVIEW: word-containment overlap with ['pine'] -- not auto-merged, verify manually"
 wild berries,123,wild berries,KEEP,"REVIEW: word-containment overlap with ['berries'] -- not auto-merged, verify manually"
 cannabis,121,cannabis,KEEP,
-virginian cedar,121,virginia cedar,MERGE,fuzzy similarity 0.97
+virginian cedar,121,cedar,MERGE,transitive merge via shared group
 cucumber,117,cucumber,KEEP,
 rose de mai,116,rose de mai,KEEP,"REVIEW: word-containment overlap with ['rose'] -- not auto-merged, verify manually"
 indian jasmine,115,indian jasmine,KEEP,"REVIEW: fuzzy-similar to 'indonesian jasmine' (sim=0.88); REVIEW: word-containment overlap with ['jasmine'] -- not auto-merged, verify manually"
@@ -337,7 +337,7 @@ cocoa,86,cocoa,KEEP,"REVIEW: fuzzy-similar to 'coca' (sim=0.89); REVIEW: word-co
 guatemalan cardamom,86,guatemalan cardamom,KEEP,"REVIEW: word-containment overlap with ['cardamom'] -- not auto-merged, verify manually"
 sicilian mandarin,85,sicilian mandarin,KEEP,"REVIEW: word-containment overlap with ['mandarin'] -- not auto-merged, verify manually"
 white wood,85,white woods,MERGE,fuzzy similarity 0.95
-indian oud,84,indian oud,KEEP,"REVIEW: fuzzy-similar to 'indian woods' (sim=0.82); REVIEW: word-containment overlap with ['oud'] -- not auto-merged, verify manually"
+indian oud,84,indian oud,KEEP,"REVIEW: fuzzy-similar to 'indian lotus' (sim=0.82); REVIEW: word-containment overlap with ['oud'] -- not auto-merged, verify manually"
 rose oil,84,rose oil,KEEP,"REVIEW: fuzzy-similar to 'rose milk' (sim=0.82); REVIEW: word-containment overlap with ['rose'] -- not auto-merged, verify manually"
 lemongrass,83,lemongrass,KEEP,"REVIEW: word-containment overlap with ['lemon'] -- not auto-merged, verify manually"
 tomato leaf,83,tomato leaf,KEEP,"REVIEW: word-containment overlap with ['tomato'] -- not auto-merged, verify manually"
@@ -350,7 +350,7 @@ coconut water,81,coconut water,KEEP,"REVIEW: fuzzy-similar to 'coconut powder' (
 indian tuberose,81,indian tuberose,KEEP,"REVIEW: word-containment overlap with ['tuberose'] -- not auto-merged, verify manually"
 verbena,81,verbena,KEEP,"REVIEW: word-containment overlap with ['lemon verbena'] -- not auto-merged, verify manually"
 tunisian neroli,80,tunisian neroli,KEEP,"REVIEW: word-containment overlap with ['neroli'] -- not auto-merged, verify manually"
-calone,78,calone,KEEP,"REVIEW: fuzzy-similar to 'cascalone' (sim=0.80) -- not auto-merged, verify manually"
+calone,78,calone,KEEP,"REVIEW: fuzzy-similar to 'calypsone' (sim=0.80) -- not auto-merged, verify manually"
 liquor,78,liquor,KEEP,"REVIEW: word-containment overlap with ['plum liquor'] -- not auto-merged, verify manually"
 hiacynth,77,hiacynth,KEEP,
 marine notes,77,,DROP_PLACEHOLDER,"category word, not a specific note (CLAUDE.md section 1)"
@@ -414,7 +414,7 @@ water jasmine,55,water jasmine,KEEP,"REVIEW: word-containment overlap with ['jas
 night blooming jasmine,54,night blooming jasmine,KEEP,"REVIEW: word-containment overlap with ['jasmine'] -- not auto-merged, verify manually"
 paprika,53,paprika,KEEP,"REVIEW: word-containment overlap with ['paprika leaf', 'pink paprika'] -- not auto-merged, verify manually"
 black vanilla husk,52,black vanilla husk,KEEP,"REVIEW: word-containment overlap with ['vanilla'] -- not auto-merged, verify manually"
-clover,52,cloves,MERGE,transitive merge via shared group
+clover,52,clover,KEEP,"manual override: clover is a different plant/flower, not a spelling variant of clove (vs 'clove'); REVIEW: fuzzy-similar to 'cloves' (sim=0.83); REVIEW: word-containment overlap with ['black clover', 'clove', 'melilot or sweet clover'] -- not auto-merged, verify manually"
 ebony wood,52,ebony wood,KEEP,"REVIEW: word-containment overlap with ['ebony'] -- not auto-merged, verify manually"
 truffle,52,truffle,KEEP,"REVIEW: word-containment overlap with ['chocolate truffle', 'white chocolate truffle'] -- not auto-merged, verify manually"
 tunisian orange blossom,51,tunisian orange blossom,KEEP,"REVIEW: word-containment overlap with ['orange'] -- not auto-merged, verify manually"
@@ -688,7 +688,7 @@ french orange flower,17,,DROP_RARE,"canonical group 'french orange flower' has 1
 gaiac wood,17,guaiac wood,MERGE,fuzzy similarity 0.95
 hyssop,17,,DROP_RARE,"canonical group 'hyssop' has 17 in-population products (< 30, after merging)"
 kashmir wood,17,,DROP_RARE,"canonical group 'kashmir wood' has 17 in-population products (< 30, after merging)"
-mangosteen,17,mango,MERGE,compound substring containment
+mangosteen,17,,DROP_RARE,"canonical group 'mangosteen' has 17 in-population products (< 30, after merging)"
 nigerian ginger,17,,DROP_RARE,"canonical group 'nigerian ginger' has 17 in-population products (< 30, after merging)"
 nougat,17,,DROP_RARE,"canonical group 'nougat' has 17 in-population products (< 30, after merging)"
 palm tree,17,,DROP_RARE,"canonical group 'palm tree' has 17 in-population products (< 30, after merging)"
@@ -1523,7 +1523,7 @@ malaysian oud,2,,DROP_RARE,"canonical group 'malaysian oud' has 2 in-population 
 malva,2,,DROP_RARE,"canonical group 'malva' has 2 in-population products (< 30, after merging)"
 mamey,2,,DROP_RARE,"canonical group 'mamey' has 2 in-population products (< 30, after merging)"
 mango tree,2,mango,MERGE,compound substring containment
-mangosteen blossom,2,mango,MERGE,transitive merge via shared group
+mangosteen blossom,2,,DROP_RARE,"canonical group 'mangosteen' has 17 in-population products (< 30, after merging)"
 manuka,2,,DROP_RARE,"canonical group 'manuka' has 2 in-population products (< 30, after merging)"
 mariposa lily,2,,DROP_RARE,"canonical group 'mariposa lily' has 2 in-population products (< 30, after merging)"
 mayflower,2,,DROP_RARE,"canonical group 'mayflower' has 2 in-population products (< 30, after merging)"
@@ -1969,7 +1969,7 @@ speculoos,1,,DROP_RARE,"canonical group 'speculoos' has 1 in-population products
 spinach,1,,DROP_RARE,"canonical group 'spinach' has 1 in-population products (< 30, after merging)"
 star fruit,1,carambola,MERGE,parenthetical gloss in source data
 stardust,1,,DROP_RARE,"canonical group 'stardust' has 1 in-population products (< 30, after merging)"
-straw,1,strawberry,MERGE,compound substring containment
+straw,1,,DROP_RARE,"canonical group 'straw' has 1 in-population products (< 30, after merging)"
 strawberry flower,1,strawberry,MERGE,compound substring containment
 strawberry jam,1,strawberry,MERGE,compound substring containment
 suederal®,1,suede,MERGE,compound substring containment

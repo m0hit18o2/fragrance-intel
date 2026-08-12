@@ -47,6 +47,29 @@ FUZZY_MAX_EDIT_DISTANCE = 2  # every true typo/spelling-variant pair we found
 # 0.91 purely from the shared "brazilian ...wood" padding) is a different pair
 # of words, not a spelling variant, and must NOT slip through on ratio alone.
 
+# --- manual review overrides (2026-08-11) -----------------------------------
+# Reviewed by hand after the first pass; hardcoded here (not in the CSV) so
+# the mapping is reproducible from source on every re-run.
+OVERRIDE_EXCLUDE = {
+    # (token_a, token_b): reason shown in the CSV in place of the algorithm's reason
+    frozenset({"amber", "ambergris"}): "manual override: ambergris is animalic, a different material from the amber accord",
+    frozenset({"amber", "amberwood"}): "manual override: amberwood is a distinct woody material, not a spelling variant of amber",
+    frozenset({"clove", "clover"}): "manual override: clover is a different plant/flower, not a spelling variant of clove",
+    frozenset({"straw", "strawberry"}): "manual override: straw (dried grass) is a different material from the strawberry fruit",
+    frozenset({"mango", "mangosteen"}): "manual override: mangosteen is a botanically unrelated fruit despite the name",
+}
+OVERRIDE_FORCE_MERGE = {
+    # (token_a, token_b): reason
+    frozenset({"virginia cedar", "cedar"}): "manual override: promoted from REVIEW",
+    frozenset({"mandarin orange", "mandarin"}): "manual override: promoted from REVIEW",
+}
+# Force the surviving canonical name for groups touched by OVERRIDE_FORCE_MERGE
+# where frequency-based canonical picking would disagree with the review
+# decision (mandarin orange, n=4075, would otherwise outrank mandarin, n=337).
+OVERRIDE_CANONICAL = {
+    "mandarin orange": "mandarin",
+}
+
 PAREN_RE = re.compile(r"\(([^()]*)\)")
 WS_RE = re.compile(r"\s+")
 
@@ -150,6 +173,8 @@ def main():
     def add_merge(a, b, reason):
         if a not in remaining or b not in remaining or a == b:
             return
+        if frozenset({a, b}) in OVERRIDE_EXCLUDE:
+            return  # reported explicitly via OVERRIDE_EXCLUDE in the output row, not review_evidence
         uf.union(a, b)
         key = tuple(sorted((a, b)))
         merge_evidence[key].append(reason)
@@ -235,6 +260,15 @@ def main():
                     review_evidence[a].append((b, sim))
                     review_evidence[b].append((a, sim))
 
+    # 5) manual force-merge overrides -- applied last, bypass all thresholds
+    for pair, reason in OVERRIDE_FORCE_MERGE.items():
+        a, b = tuple(pair)
+        if a not in remaining or b not in remaining:
+            continue
+        uf.union(a, b)
+        key = tuple(sorted((a, b)))
+        merge_evidence[key].append(reason)
+
     # --- build groups from union-find --------------------------------------
     groups = defaultdict(set)
     for tok in remaining:
@@ -247,6 +281,9 @@ def main():
         return s
 
     def pick_canonical(members):
+        for tok, forced in OVERRIDE_CANONICAL.items():
+            if tok in members and forced in members:
+                return forced
         # highest n_products, tie-break shorter string then alphabetical
         return sorted(members, key=lambda t: (-n_products[t], len(t), t))[0]
 
@@ -294,6 +331,10 @@ def main():
 
         if canon == tok:
             reasons = []
+            for pair, r in OVERRIDE_EXCLUDE.items():
+                if tok in pair:
+                    other = next(iter(pair - {tok}))
+                    reasons.append(f"{r} (vs '{other}')")
             if tok in review_evidence:
                 fuzzy_matches = sorted(
                     {(o, s) for o, s in review_evidence[tok] if s is not None},
