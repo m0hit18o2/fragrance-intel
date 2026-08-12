@@ -18,9 +18,19 @@ still carried as visible columns for transparency -- this is a modeling
 choice, not one of CLAUDE.md's fixed decisions, and is flagged here for
 review.
 
-score = z(approval) + z(desire) + z(sentiment_net) - z(supply_share)
+score = z(approval) + z(desire) + z(sentiment_polarity) - z(supply_share)
         + 0.5*z(momentum)
 Weights are fixed; every component is written alongside the total.
+
+Sentiment component: sentiment_polarity = (pos_weight - neg_weight) /
+(pos_weight + neg_weight), computed per family from 05_family_sentiment.parquet.
+Raw net weight (sentiment_net_raw, kept for comparison) is confounded by how
+common a family's accord vocabulary is in the pros/cons text at all -- a
+family whose top accords are frequently-mentioned words outscores a family
+with rarer-worded accords on volume alone, regardless of actual polarity.
+
+Confidence tier (report-only, from n_products_weighted; never filters or
+penalises the score): HIGH >=500, MEDIUM 200-499, LOW <200.
 
 Language discipline (CLAUDE.md section 8): "associated with", never "drives"
 or "causes". Ratings are enthusiast approval, not sales. This ranking is a
@@ -57,10 +67,20 @@ TOP_NOTES_PER_CLUSTER = 8
 # cluster 4: musk/bergamot/sandalwood/vanilla/jasmine/amber/patchouli/cedar,
 # ~59% of launches -- table stakes, not positioning. See docstring.
 BACKBONE_CLUSTERS = {4}
+CONFIDENCE_HIGH = 500
+CONFIDENCE_MEDIUM = 200
 
 
 def zscore(s):
     return (s - s.mean()) / s.std(ddof=0)
+
+
+def confidence_tier(n):
+    if n >= CONFIDENCE_HIGH:
+        return "HIGH"
+    if n >= CONFIDENCE_MEDIUM:
+        return "MEDIUM"
+    return "LOW"
 
 
 def build_cluster_names(taxonomy_map):
@@ -135,43 +155,69 @@ def main():
     df = df.merge(demand.set_index("cluster")[
         ["approval_raw", "approval_demeaned", "desire_raw", "desire_demeaned"]
     ], left_index=True, right_index=True)
-    df = df.merge(sentiment.set_index("cluster")[["net_score"]].rename(columns={"net_score": "sentiment_net"}),
-                  left_index=True, right_index=True)
+    sent = sentiment.set_index("cluster")[["net_positive_weight", "net_negative_weight", "net_score"]].copy()
+    sent = sent.rename(columns={"net_score": "sentiment_net_raw"})
+    pos_plus_neg = sent["net_positive_weight"] + sent["net_negative_weight"]
+    sent["sentiment_polarity"] = np.where(
+        pos_plus_neg > 0,
+        (sent["net_positive_weight"] - sent["net_negative_weight"]) / pos_plus_neg,
+        np.nan,
+    )
+    df = df.merge(sent[["sentiment_net_raw", "sentiment_polarity"]], left_index=True, right_index=True)
 
     df = df.reset_index()
     df["backbone"] = df["cluster"].isin(BACKBONE_CLUSTERS)
+    df["confidence"] = df["n_products_weighted"].map(confidence_tier)
     ranked_mask = ~df["backbone"]
     n_backbone = int(df["backbone"].sum())
     print(f"backbone clusters excluded from ranking: {sorted(BACKBONE_CLUSTERS)} "
           f"({n_backbone} of {len(df)} families)")
+    print(f"confidence tiers (n_products_weighted): HIGH >= {CONFIDENCE_HIGH}, "
+          f"MEDIUM {CONFIDENCE_MEDIUM}-{CONFIDENCE_HIGH - 1}, LOW < {CONFIDENCE_MEDIUM} "
+          "-- report-only, does not filter or penalise the score")
 
     # --- z-score components over the non-backbone families only, composite score
-    z_cols = ["z_approval", "z_desire", "z_sentiment", "z_supply", "z_momentum"]
+    z_cols = ["z_approval", "z_desire", "z_sentiment", "z_sentiment_raw", "z_supply", "z_momentum"]
     for col in z_cols:
         df[col] = np.nan
     df.loc[ranked_mask, "z_approval"] = zscore(df.loc[ranked_mask, "approval_demeaned"])
     df.loc[ranked_mask, "z_desire"] = zscore(df.loc[ranked_mask, "desire_demeaned"])
-    df.loc[ranked_mask, "z_sentiment"] = zscore(df.loc[ranked_mask, "sentiment_net"])
+    df.loc[ranked_mask, "z_sentiment"] = zscore(df.loc[ranked_mask, "sentiment_polarity"])
+    df.loc[ranked_mask, "z_sentiment_raw"] = zscore(df.loc[ranked_mask, "sentiment_net_raw"])
     df.loc[ranked_mask, "z_supply"] = zscore(df.loc[ranked_mask, "supply_share"])
     df.loc[ranked_mask, "z_momentum"] = zscore(df.loc[ranked_mask, "momentum"])
 
     df["score"] = np.nan
+    df["score_old_sentiment"] = np.nan  # same formula, sentiment_net_raw instead -- isolates the effect of the fix
     df.loc[ranked_mask, "score"] = (
         df.loc[ranked_mask, "z_approval"] + df.loc[ranked_mask, "z_desire"]
         + df.loc[ranked_mask, "z_sentiment"] - df.loc[ranked_mask, "z_supply"]
         + 0.5 * df.loc[ranked_mask, "z_momentum"]
     )
+    df.loc[ranked_mask, "score_old_sentiment"] = (
+        df.loc[ranked_mask, "z_approval"] + df.loc[ranked_mask, "z_desire"]
+        + df.loc[ranked_mask, "z_sentiment_raw"] - df.loc[ranked_mask, "z_supply"]
+        + 0.5 * df.loc[ranked_mask, "z_momentum"]
+    )
 
     ranked = df[ranked_mask].sort_values("score", ascending=False).reset_index(drop=True)
+    ranked["rank_new"] = ranked.index + 1
+    rank_old_lookup = (
+        ranked.sort_values("score_old_sentiment", ascending=False)
+        .reset_index(drop=True)
+        .assign(rank_old=lambda d: d.index + 1)
+        .set_index("cluster")["rank_old"]
+    )
+    ranked["rank_old"] = ranked["cluster"].map(rank_old_lookup)
     backbone = df[~ranked_mask].reset_index(drop=True)
     df_out = pd.concat([ranked, backbone], ignore_index=True)  # ranked block, backbone row(s) last
 
     out_cols = [
-        "cluster", "cluster_name", "backbone", "n_products_weighted",
+        "cluster", "cluster_name", "backbone", "confidence", "n_products_weighted",
         "approval_raw", "approval_demeaned", "desire_raw", "desire_demeaned",
-        "sentiment_net", "supply_share", "momentum",
+        "sentiment_net_raw", "sentiment_polarity", "supply_share", "momentum",
         "z_approval", "z_desire", "z_sentiment", "z_supply", "z_momentum",
-        "score",
+        "score", "score_old_sentiment",
     ]
     df_out[out_cols].to_csv(OUT_DIR / "06_territory_scores.csv", index=False)
 
@@ -190,8 +236,17 @@ def main():
     print(f"RANKED TERRITORIES ({len(ranked)} families, backbone cluster(s) "
           f"{sorted(BACKBONE_CLUSTERS)} excluded from ranking and from the z-score "
           "reference population):")
-    with pd.option_context("display.width", 240, "display.max_columns", 20, "display.float_format", "{:.3f}".format):
-        print(ranked[out_cols].to_string(index=False))
+    print()
+    print("SENTIMENT METHOD COMPARISON -- rank under new sentiment_polarity vs old "
+          "sentiment_net_raw (same approval/desire/supply/momentum components, only "
+          "the sentiment term differs):")
+    compare_cols = ["rank_new", "rank_old", "cluster", "cluster_name",
+                     "sentiment_net_raw", "sentiment_polarity", "score_old_sentiment", "score"]
+    with pd.option_context("display.width", 200, "display.max_columns", 20, "display.float_format", "{:.3f}".format):
+        print(ranked[compare_cols].to_string(index=False))
+        print()
+        print("FULL RANKED TABLE (every component, n_products_weighted, confidence):")
+        print(ranked[["rank_new"] + out_cols].to_string(index=False))
         print()
         print("BACKBONE FAMILY (table stakes, not positioning -- raw components only, no score):")
         print(backbone[out_cols].to_string(index=False))
