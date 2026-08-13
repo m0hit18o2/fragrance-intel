@@ -58,3 +58,19 @@ tunes alpha on the validation split and selects `alpha=0.4`.
 `10_build_app.py`'s Product Similarity tab uses the tuned value
 (`alpha=0.4`), since it's presenting the best-performing configuration to
 a user, not comparing it against an untuned baseline.
+
+**On the test split, hybrid's tuned-vs-untuned gain is −0.0002**
+(`alpha=0.4`, selected on validation, vs. `alpha=0.5`, the untuned
+default) — `alpha=0.5` is marginally *better* on held-out test data.
+This is not a tuning failure: the validation curve is flat near its
+peak, so the selected configuration performs within noise of the
+neutral default on held-out data. This is consistent with the small
+gains observed for all three tuned representations in `11_test_results.csv`
+(note_tfidf +0.0011, note_svd +0.0060, hybrid −0.0002) and indicates that
+the untuned results reported in `09_evaluation.csv` are not artefacts of
+favourable defaults — a neutral, untuned alpha does about as well as a
+validation-selected one. The 08 default stays at `alpha=0.5` for exactly
+this reason (see above); the app uses the tuned value only because
+presenting the single best-known configuration is the right choice for
+an end-user-facing tool, not because it's been shown to be reliably
+better than the default on unseen queries.

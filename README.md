@@ -144,21 +144,39 @@ depends on network access.
 
 ## Reproducibility
 
-A fresh venv was built from `requirements.txt`, and the full pipeline was
-re-run end-to-end from raw data in an isolated directory, then diffed
-against the committed outputs. Verified identical:
+Last verified 2026-08-13, against the current pipeline state (rebuilt
+`08_recommender.py` with the reconciled hybrid definition, `04_demand.py`
+also writing `04_product_demand.parquet`, the trimmed 74-package
+`requirements.txt`, and the two-tab `10_build_app.py`). A fresh venv was
+built from the current `requirements.txt`, and the full pipeline — all 15
+scripts, in order — was re-run end-to-end from raw data in an isolated
+directory (raw data symlinked, `cluster_names_final.csv` copied in as the
+one human-authored non-pipeline input), then diffed against the committed
+outputs. Verified identical:
 
 - `outputs/06_territory_scores.csv` — identical to 3 decimal places on
-  every column.
+  every column (0/255 numeric cells differ).
 - `outputs/taxonomy_map.csv` — Adjusted Rand Index of 1.000000 between the
   committed and freshly-computed cluster assignments (492/492 notes), and
   in fact exact label equality too, not just partition equality.
 - `outputs/09_evaluation.csv` — identical to 4 decimal places on every
-  algorithm and metric.
+  algorithm and metric (0/104 numeric cells differ).
+- `outputs/11_test_results.csv` — identical to 4 decimal places on every
+  algorithm and metric (0/143 numeric cells differ).
+- `outputs/note_normalisation.csv` — byte-identical (MD5 match), which is
+  the expected result now: this confirms the tie-break fix described
+  below has held since it was made.
+- `outputs/app/index.html` — same file size (10,755,196 bytes) in both,
+  and the embedded JSON payload parses cleanly in both. It went further
+  than required and matched byte-for-byte (MD5 match) this run too,
+  though that isn't guaranteed on every run — dict ordering inside the
+  payload isn't pinned, so a future check could see the same size and
+  valid JSON with a different byte layout without that being a problem.
 
-One cosmetic divergence was found (beyond the three files above, which
-were the ones specifically checked) and has since been fixed: a single
-row in `outputs/note_normalisation.csv` — the note `calone`'s REVIEW
+No divergence was found on this check. An earlier check (against an
+older pipeline state, before the hybrid reconciliation) had found one
+cosmetic divergence, since fixed: a single row in
+`outputs/note_normalisation.csv` — the note `calone`'s REVIEW
 annotation — cited a different one of two exactly-tied fuzzy-match
 candidates (`calypsone` vs. `cascalone`, both similarity 0.80) depending
 on the process's Python string-hash seed, which is randomised by default
@@ -166,5 +184,7 @@ per process. This never affected any `canonical`/`action` column, only
 which example was named in a human-facing note, and it never affected any
 number anywhere downstream. The fix (an explicit alphabetical tie-break in
 `02_normalise_notes.py`, not reliance on setting `PYTHONHASHSEED`) was
-verified by running the script in two separate processes with confirmed
-different hash seeds and checking the output was byte-identical both times.
+verified at the time by running the script in two separate processes with
+confirmed different hash seeds and checking the output was byte-identical
+both times — and this check's byte-identical `note_normalisation.csv`
+result confirms that fix has held under the current pipeline state too.
