@@ -19,7 +19,7 @@ required. [APP LINK]
 
 ## YouTube link
 
-[YOUTUBE LINK]
+https://youtu.be/GqPExsjt_24
 
 ## How to run the code
 
@@ -82,9 +82,8 @@ data/raw/perfumes.jsonl
 One JSON object per line, 131,930 records — see `SCHEMA.md` for the
 exact record structure and `DATA_DICTIONARY.md` for field-coverage
 statistics. **We have not included this file in the submission — at
-~500MB it's too large to upload.** It came from a Fragrantica data dump
-supplied for this project; obtain it from whoever supplied it to you if
-you need to re-run the full pipeline.
+~500MB it's too large to upload.**
+https://www.kaggle.com/datasets/ledecanteur/fragrantica-perfumes
 
 In its place, we've included `data/sample/perfumes_sample.jsonl` — 5,000
 records sampled (seed 42) from the raw file, biased toward products in
