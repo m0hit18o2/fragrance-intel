@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fragrance Neighbour Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#faf9f7; --panel:#ffffff; --border:#e3e0da; --text:#2b2a28; --muted:#78746c;
+    --accent:#7a5c3e; --accent-soft:#efe6da; --chip:#f1efe9; --chip-shared:#e7d8b8;
+    --good:#4c7a52; --bad:#a6564a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); font-size:15px; line-height:1.45;
+  }
+  header{padding:18px 24px 14px; border-bottom:1px solid var(--border); background:var(--panel);}
+  header h1{margin:0 0 4px; font-size:20px; font-weight:650;}
+  header p{margin:0; color:var(--muted); font-size:13px;}
+  .layout{display:flex; gap:20px; padding:20px 24px; max-width:1180px; margin:0 auto;}
+  .col-search{flex:0 0 320px; min-width:280px;}
+  .col-detail{flex:1; min-width:0;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px;}
+  .panel + .panel{margin-top:16px;}
+  input[type=text]{
+    width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:7px;
+    font-size:14px; background:#fff; color:var(--text);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent-soft); border-color:var(--accent);}
+  .hint{color:var(--muted); font-size:12px; margin:6px 2px 10px;}
+  .results{max-height:520px; overflow-y:auto; margin-top:10px;}
+  .result-row{
+    padding:8px 9px; border-radius:7px; cursor:pointer; display:flex; justify-content:space-between;
+    gap:8px; align-items:baseline;
+  }
+  .result-row:hover{background:var(--accent-soft);}
+  .result-row.active{background:var(--accent); color:#fff;}
+  .result-row .rname{font-weight:560; font-size:13.5px;}
+  .result-row .rbrand{color:var(--muted); font-size:12px; white-space:nowrap;}
+  .result-row.active .rbrand{color:#f1e9de;}
+  .empty{color:var(--muted); font-size:13px; padding:14px 4px;}
+
+  .card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .card-head h2{margin:0 0 2px; font-size:19px;}
+  .card-head .brand-line{color:var(--muted); font-size:14px;}
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600;
+    background:var(--accent-soft); color:var(--accent); white-space:nowrap;
+  }
+  .rating{font-size:14px; color:var(--text); white-space:nowrap;}
+  .rating .star{color:#c8952e;}
+  .section-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    margin:14px 0 6px;
+  }
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{background:var(--chip); border-radius:6px; padding:4px 9px; font-size:12.5px;}
+  .chip.shared{background:var(--chip-shared); font-weight:600;}
+  .chip .pct{color:var(--muted); font-weight:400;}
+
+  .nbr-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;}
+  .nbr-controls label{font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; cursor:pointer;}
+  .nbr-list{display:flex; flex-direction:column; gap:8px;}
+  .nbr-row{
+    border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#fffefc;
+  }
+  .nbr-row.clickable{cursor:pointer;}
+  .nbr-row.clickable:hover{border-color:var(--accent);}
+  .nbr-row.unreachable{opacity:.72;}
+  .nbr-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .nbr-top .rank{color:var(--muted); font-size:12px; width:22px; flex:none;}
+  .nbr-top .title{font-weight:600; font-size:14px; flex:1;}
+  .nbr-top .sim{font-size:12.5px; color:var(--muted); white-space:nowrap;}
+  .simbar{height:4px; border-radius:2px; background:var(--border); margin:6px 0 8px; overflow:hidden;}
+  .simbar > div{height:100%; background:var(--accent);}
+  .why{font-size:12.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+  .why .fam-same{color:var(--good); font-weight:600;}
+  .why .fam-diff{color:var(--bad);}
+  .why .none{font-style:italic;}
+  .not-in-catalog{font-size:11px; color:var(--muted); font-style:italic; margin-top:4px;}
+  footer{text-align:center; color:var(--muted); font-size:12px; padding:18px; }
+  ::-webkit-scrollbar{width:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fragrance Neighbour Explorer</h1>
+  <p id="subtitle">Loading…</p>
+</header>
+
+<div class="layout">
+  <div class="col-search">
+    <div class="panel">
+      <input type="text" id="search" placeholder="Search by name or brand…" autocomplete="off">
+      <div class="hint" id="resultCount"></div>
+      <div class="results" id="results"></div>
+    </div>
+  </div>
+
+  <div class="col-detail">
+    <div class="panel" id="productCard"></div>
+    <div class="panel" id="neighbourPanel"></div>
+  </div>
+</div>
+
+<footer>
+  Note similarity: TF-IDF cosine over canonical notes (the best-performing representation tested).
+  Explanations are computed from each product's own note/family data, not modelled.
+</footer>
+
+<script id="payload" type="application/json">__PAYLOAD_JSON__</script>
+<script>
+(function(){
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("payload").textContent);
+  var products = DATA.products;
+  var topIds = DATA.top_ids;
+
+  document.getElementById("subtitle").textContent =
+    "Browsing the top " + DATA.meta.n_top_products.toLocaleString() +
+    " products by collection size (relation.have) · neighbours via " + DATA.meta.representation;
+
+  // ---------- fuzzy search (no libraries) ----------------------------------
+  function fuzzyScore(query, text){
+    if (!query) return 0;
+    var idx = text.indexOf(query);
+    if (idx !== -1) return 1000 - idx - text.length * 0.01; // substring hit, earlier & shorter = better
+    // subsequence fallback: all query chars appear in order, score by compactness
+    var qi = 0, span = 0, start = -1;
+    for (var i = 0; i < text.length && qi < query.length; i++){
+      if (text[i] === query[qi]){
+        if (start === -1) start = i;
+        qi++;
+        span = i - start + 1;
+      }
+    }
+    if (qi < query.length) return -1; // not all chars found
+    return 200 - span - text.length * 0.01;
+  }
+
+  var searchIndex = topIds.map(function(id){
+    var p = products[id];
+    return {id: id, text: (p.n + " " + p.b).toLowerCase()};
+  });
+
+  var selectedId = null;
+  var excludeSameBrand = false;
+
+  function runSearch(query){
+    query = query.trim().toLowerCase();
+    var resultsEl = document.getElementById("results");
+    var countEl = document.getElementById("resultCount");
+    resultsEl.innerHTML = "";
+
+    var scored;
+    if (!query){
+      scored = topIds.slice(0, 30).map(function(id){ return {id: id, score: 0}; });
+      countEl.textContent = "Top " + scored.length + " by popularity — type to search " + topIds.length.toLocaleString() + " products";
+    } else {
+      scored = searchIndex.map(function(e){ return {id: e.id, score: fuzzyScore(query, e.text)}; })
+                           .filter(function(e){ return e.score > -1; })
+                           .sort(function(a,b){ return b.score - a.score; })
+                           .slice(0, 30);
+      countEl.textContent = scored.length + " match" + (scored.length === 1 ? "" : "es");
+    }
+
+    if (scored.length === 0){
+      resultsEl.innerHTML = '<div class="empty">No matches.</div>';
+      return;
+    }
+    scored.forEach(function(e){
+      var p = products[e.id];
+      var row = document.createElement("div");
+      row.className = "result-row" + (e.id === selectedId ? " active" : "");
+      row.innerHTML = '<span class="rname"></span><span class="rbrand"></span>';
+      row.querySelector(".rname").textContent = p.n;
+      row.querySelector(".rbrand").textContent = p.b + (p.y ? " · " + p.y : "");
+      row.addEventListener("click", function(){ selectProduct(e.id); });
+      resultsEl.appendChild(row);
+    });
+  }
+
+  function sharedNotes(a, b){
+    var setB = new Set(b.notes);
+    return a.notes.filter(function(n){ return setB.has(n); });
+  }
+
+  function renderProductCard(id){
+    var p = products[id];
+    var el = document.getElementById("productCard");
+    var accordsHtml = (p.acc || []).map(function(a){
+      return '<span class="chip">' + a[0] + ' <span class="pct">' + a[1] + '%</span></span>';
+    }).join("");
+    var notesHtml = (p.notes || []).map(function(n){
+      return '<span class="chip">' + n + '</span>';
+    }).join("") || '<span class="hint">no notes on file</span>';
+
+    el.innerHTML =
+      '<div class="card-head">' +
+        '<div><h2></h2><div class="brand-line"></div></div>' +
+        '<div style="display:flex;gap:10px;align-items:center;">' +
+          '<span class="badge"></span>' +
+          '<span class="rating"></span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="section-label">Notes</div><div class="chips notes-chips"></div>' +
+      '<div class="section-label">Top accords</div><div class="chips">' + accordsHtml + '</div>';
+
+    el.querySelector("h2").textContent = p.n;
+    el.querySelector(".brand-line").textContent = p.b + (p.y ? " · " + p.y : "") + (p.g ? " · " + p.g : "");
+    el.querySelector(".badge").textContent = p.f || "unclassified";
+    el.querySelector(".rating").innerHTML = p.r != null ? '<span class="star">&#9733;</span> ' + p.r.toFixed(2) : "—";
+    el.querySelector(".notes-chips").innerHTML = notesHtml;
+  }
+
+  function renderNeighbours(id){
+    var p = products[id];
+    var panel = document.getElementById("neighbourPanel");
+    var list = DATA.neighbours[id] || [];
+
+    var filtered = list.filter(function(pair){
+      if (!excludeSameBrand) return true;
+      var np = products[pair[0]];
+      return np.b !== p.b;
+    });
+
+    var controls =
+      '<div class="nbr-controls">' +
+        '<div class="section-label" style="margin:0;">Nearest neighbours (' + filtered.length + ')</div>' +
+        '<label><input type="checkbox" id="excludeBrand"' + (excludeSameBrand ? " checked" : "") + '> Exclude same-brand</label>' +
+      '</div>';
+
+    var rows = filtered.map(function(pair, i){
+      var nid = pair[0], sim = pair[1];
+      var np = products[nid];
+      var reachable = topIds.indexOf(nid) !== -1;
+      var shared = sharedNotes(p, np);
+      var sharedHtml = shared.length
+        ? shared.map(function(n){ return '<span class="chip shared">' + n + '</span>'; }).join("")
+        : '<span class="why none">no shared notes</span>';
+      var famHtml = np.f && p.f
+        ? (np.f === p.f ? '<span class="fam-same">same family (' + p.f + ')</span>'
+                        : '<span class="fam-diff">' + p.f + ' vs ' + np.f + '</span>')
+        : '<span class="why none">family unknown</span>';
+
+      return (
+        '<div class="nbr-row' + (reachable ? " clickable" : " unreachable") + '" data-id="' + nid + '">' +
+          '<div class="nbr-top">' +
+            '<span class="rank">#' + (i + 1) + '</span>' +
+            '<span class="title">' + np.n + ' — ' + np.b + (np.y ? " (" + np.y + ")" : "") + '</span>' +
+            '<span class="sim">' + (sim * 100).toFixed(1) + '% similar</span>' +
+          '</div>' +
+          '<div class="simbar"><div style="width:' + Math.max(sim, 0) * 100 + '%"></div></div>' +
+          '<div class="why"><strong style="font-weight:600;color:var(--text);">why:</strong> ' + sharedHtml + famHtml + '</div>' +
+          (reachable ? '' : '<div class="not-in-catalog">not in the browsable top ' + DATA.meta.n_top_products + ' — informational only</div>') +
+        '</div>'
+      );
+    }).join("");
+
+    panel.innerHTML = controls + '<div class="nbr-list">' + (rows || '<div class="empty">No neighbours pass the current filter.</div>') + '</div>';
+
+    panel.querySelector("#excludeBrand").addEventListener("change", function(e){
+      excludeSameBrand = e.target.checked;
+      renderNeighbours(id);
+    });
+    panel.querySelectorAll(".nbr-row.clickable").forEach(function(row){
+      row.addEventListener("click", function(){ selectProduct(parseInt(row.dataset.id, 10)); });
+    });
+  }
+
+  function selectProduct(id){
+    selectedId = id;
+    renderProductCard(id);
+    renderNeighbours(id);
+    runSearch(document.getElementById("search").value);
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }
+
+  document.getElementById("search").addEventListener("input", function(e){
+    runSearch(e.target.value);
+  });
+
+  runSearch("");
+  selectProduct(topIds[0]);
+})();
+</script>
+</body>
+</html>
