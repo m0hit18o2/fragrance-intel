@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 
 IN_DIR = Path("data/interim")
+OUT_DIR = Path("outputs")
 SEED = 42
 CONFIDENT_THRESHOLD = 5
 KS = (5, 10, 20)
@@ -146,6 +147,7 @@ def main():
         rows.append(row)
 
     table = pd.DataFrame(rows).set_index("algorithm")
+    table.to_csv(OUT_DIR / "09_evaluation.csv")
 
     print("=" * 140)
     print("EVALUATION vs COMMUNITY GROUND TRUTH (confident reminds_me_of edges)")

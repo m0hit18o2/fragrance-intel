@@ -370,6 +370,7 @@ def main():
     summary["pct_noise"] = (summary["pct_noise"] * 100).round(1)
     summary["ari_vs_kmeans15"] = summary["ari_vs_kmeans15"].round(4)
     summary["quality_value"] = summary["quality_value"].round(4)
+    summary.to_csv(OUT_DIR / "03c_summary.csv", index=False)
 
     print()
     print("=" * 92)

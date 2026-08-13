@@ -1,0 +1,7 @@
+method,n_clusters,pct_noise,ari_vs_kmeans15,quality_name,quality_value
+hierarchical_average_k15,15,0.0,0.0078,cophenetic_corr(average),0.822
+umap_hdbscan_nn15,2,0.0,0.0054,silhouette(non-noise),0.3054
+umap_hdbscan_nn30,2,0.0,0.0054,silhouette(non-noise),0.1954
+skipgram_kmeans15,15,0.0,0.3202,silhouette,0.0217
+som_6x6,36,0.0,0.3904,quantization_error,6.7863
+louvain,16,0.0,0.2171,modularity,0.2515

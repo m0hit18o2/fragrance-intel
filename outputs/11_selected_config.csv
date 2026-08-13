@@ -1,0 +1,4 @@
+representation,selected_val_precision@10,sublinear_tf,min_df,use_idf,tier_weighting,n_components,ppmi_shift,alpha
+note_tfidf,0.042935567754984104,False,1.0,False,none,,,
+note_svd,0.034585379947991914,,,,,200.0,1.0,
+hybrid,0.05180583646344988,,,,,,,0.4
