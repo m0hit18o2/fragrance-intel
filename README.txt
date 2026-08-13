@@ -82,7 +82,7 @@ data/raw/perfumes.jsonl
 One JSON object per line, 131,930 records — see `SCHEMA.md` for the
 exact record structure and `DATA_DICTIONARY.md` for field-coverage
 statistics. **We have not included this file in the submission — at
-~500MB it's too large to upload.** 
+~500MB it's too large to upload.**
 https://www.kaggle.com/datasets/ledecanteur/fragrantica-perfumes
 
 In its place, we've included `data/sample/perfumes_sample.jsonl` — 5,000
