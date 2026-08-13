@@ -8,11 +8,29 @@ four fixed representations plus a hybrid, all on the analysis population.
     B. note_tfidf  TF-IDF over canonical notes (binary presence x IDF), cosine space.
     C. family      the 15-d fractional family membership vector from 03.
     D. accord      accord strength vector (strengths 0-100 as weights).
-    hybrid         z-scored A concatenated with z-scored D.
+    hybrid         alpha * cosine(note_tfidf) + (1-alpha) * cosine(accord),
+                    alpha=0.5 (neutral, untuned default -- see below).
 
-Neighbours computed with sklearn NearestNeighbors(metric="cosine") which
-chunks its pairwise-distance computation internally -- no dense NxN matrix
-is ever materialised.
+Hybrid definition, reconciled 2026-08-13: this used to be z-scored note_svd
+concatenated with z-scored accord (a feature-level fusion). That definition
+and 11_param_optimisation.py's alpha-tuned hybrid (a score-level blend of
+note_tfidf and accord cosine similarity) were different objects being
+compared as if they were the same representation -- invalid. Score-level
+blending of note_tfidf + accord was adopted as canonical because it beat
+the old definition by a wide margin on the held-out test split (precision@10
+0.0516 vs 0.0393, hit_rate@10 0.3518 vs 0.2788; see 11_test_results.csv's
+hybrid_TUNED vs the old hybrid_untuned), consistent with note_tfidf
+independently outperforming note_svd as a base note representation
+throughout 09_recommender_eval.py. alpha=0.5 here is a neutral, untuned
+midpoint -- not the tuned value (0.4, chosen by 11's leakage-safe grid
+search on validation) -- so 08's "default" and 11's "tuned" stay
+comparable rather than collapsing into the same number.
+
+Neighbours computed via sklearn NearestNeighbors(metric="cosine") for A/B/C/D,
+which chunks its pairwise-distance computation internally. Hybrid's blended
+score isn't a single vector space, so it's computed with an explicit
+row-chunked cosine_similarity (same principle: bounded memory, never a
+dense NxN matrix).
 
 Outputs: data/interim/08_neighbours_{rep}.parquet
     product_id, rank, neighbour_id, similarity
@@ -28,12 +46,15 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 
 IN_DIR = Path("data/interim")
 OUT_DIR = Path("outputs")
 SEED = 42
 TOP_K = 50
+HYBRID_ALPHA_DEFAULT = 0.5  # neutral/untuned; 11_param_optimisation.py tunes this on validation
+HYBRID_CHUNK = 500
 
 PAREN_RE = re.compile(r"\(([^()]*)\)")
 WS_RE = re.compile(r"\s+")
@@ -81,6 +102,40 @@ def top50_neighbours(ids, matrix, rep_name):
     print(f"  [{rep_name}] {n:,} products, matrix {matrix.shape}, "
           f"{len(out):,} neighbour rows, mean top-1 similarity "
           f"{out.loc[out['rank'] == 1, 'similarity'].mean():.3f}")
+    return out
+
+
+def hybrid_top50_neighbours(ids, tfidf_sub, accord_sub, alpha, chunk_size=HYBRID_CHUNK):
+    """ids aligned to rows of tfidf_sub (sparse) and accord_sub (dense).
+    Blended similarity alpha*cos(tfidf) + (1-alpha)*cos(accord), top-50
+    excluding self, computed in row chunks so no dense NxN matrix is ever
+    held in memory at once (only chunk_size x n at a time)."""
+    n = len(ids)
+    id_arr = np.asarray(ids)
+    rows = []
+    for start in range(0, n, chunk_size):
+        end = min(start + chunk_size, n)
+        sim_t = cosine_similarity(tfidf_sub[start:end], tfidf_sub)
+        sim_a = cosine_similarity(accord_sub[start:end], accord_sub)
+        blended = alpha * sim_t + (1 - alpha) * sim_a
+        for local_i, global_i in enumerate(range(start, end)):
+            pid = id_arr[global_i]
+            order = np.argsort(-blended[local_i])
+            r = 0
+            for j in order:
+                if id_arr[j] == pid:
+                    continue
+                r += 1
+                rows.append({"product_id": pid, "rank": r, "neighbour_id": id_arr[j],
+                             "similarity": float(blended[local_i, j])})
+                if r == TOP_K:
+                    break
+    out = pd.DataFrame(rows)
+    out["product_id"] = out["product_id"].astype("Int64")
+    out["neighbour_id"] = out["neighbour_id"].astype("Int64")
+    out["rank"] = out["rank"].astype("int16")
+    print(f"  [hybrid] {n:,} products, alpha={alpha}, {len(out):,} neighbour rows, "
+          f"mean top-1 similarity {out.loc[out['rank'] == 1, 'similarity'].mean():.3f}")
     return out
 
 
@@ -159,23 +214,19 @@ def main():
     nbr_d = top50_neighbours(d_ids, d_matrix, "accord")
     nbr_d.to_parquet(IN_DIR / "08_neighbours_accord.parquet", index=False)
 
-    # === hybrid: z-scored A concat z-scored D, on the intersection of both =========
-    hybrid_ids = sorted(set(a_ids) & set(d_ids))
-    a_lookup = {pid: vec for pid, vec in zip(a_ids, a_matrix)}
-    d_lookup = {pid: vec for pid, vec in zip(d_ids, d_matrix)}
-    a_sub = np.stack([a_lookup[p] for p in hybrid_ids])
-    d_sub = np.stack([d_lookup[p] for p in hybrid_ids])
-
-    def zscore_cols(m):
-        mean, std = m.mean(axis=0), m.std(axis=0)
-        std[std == 0] = 1.0
-        return (m - mean) / std
-
-    hybrid_matrix = np.concatenate([zscore_cols(a_sub), zscore_cols(d_sub)], axis=1)
-    hybrid_ids = np.array(hybrid_ids)
-    print(f"hybrid eligible set (A ∩ D): {len(hybrid_ids):,} products, "
-          f"{hybrid_matrix.shape[1]} dims (50 note_svd + {d_sub.shape[1]} accord)")
-    nbr_hybrid = top50_neighbours(hybrid_ids, hybrid_matrix, "hybrid")
+    # === hybrid: alpha * cosine(note_tfidf) + (1-alpha) * cosine(accord) ===========
+    # Canonical definition (see module docstring for the 2026-08-13 reconciliation):
+    # a score-level blend of B (note_tfidf) and D (accord), matching what
+    # 11_param_optimisation.py tunes alpha over. NOT the note_svd embedding.
+    hybrid_ids = sorted(set(note_products) & set(d_ids))
+    b_index_lookup = {p: i for i, p in enumerate(note_products)}
+    d_index_lookup = {p: i for i, p in enumerate(d_ids)}
+    tfidf_hybrid_sub = b_matrix[[b_index_lookup[p] for p in hybrid_ids]]
+    accord_hybrid_sub = d_matrix[[d_index_lookup[p] for p in hybrid_ids]]
+    print(f"hybrid eligible set (note_tfidf ∩ accord): {len(hybrid_ids):,} products, "
+          f"alpha={HYBRID_ALPHA_DEFAULT} (untuned default; 11_param_optimisation.py tunes this)")
+    nbr_hybrid = hybrid_top50_neighbours(hybrid_ids, tfidf_hybrid_sub, accord_hybrid_sub,
+                                          HYBRID_ALPHA_DEFAULT)
     nbr_hybrid.to_parquet(IN_DIR / "08_neighbours_hybrid.parquet", index=False)
 
     # --- diagnostics -------------------------------------------------------------

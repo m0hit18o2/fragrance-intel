@@ -14,9 +14,11 @@ Demand components (approval, desire) use the BRAND-DEMEANED signals from
 halo (e.g. a heritage house's products score high approval for being that
 house's, not for their family), and a white-space read should isolate
 family-level enthusiast preference net of that. Both raw and demeaned are
-still carried as visible columns for transparency -- this is a modeling
-choice, not one of CLAUDE.md's fixed decisions, and is flagged here for
-review.
+still carried as visible columns for transparency. This was a modeling
+choice, not one of CLAUDE.md's fixed decisions -- CONFIRMED (see
+METHODS_NOTES.md): the composite score always uses demeaned; raw values
+are reported alongside it only where an absolute (non-relative) level is
+what's being described, never fed into the score itself.
 
 score = z(approval) + z(desire) + z(sentiment_polarity) - z(supply_share)
         + 0.5*z(momentum)

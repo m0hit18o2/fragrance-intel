@@ -16,6 +16,9 @@ keep raw values (brand_demeaned=False). Both raw and demeaned versions are
 aggregated to family level, weighted by fractional family membership.
 
 Output: data/interim/04_family_demand.parquet
+        data/interim/04_product_demand.parquet (per-product signals, for
+        anything downstream that needs product-level rather than
+        family-level demand -- e.g. 10_build_app.py's per-note reception stats)
 Run standalone: python src/04_demand.py
 (inputs: data/interim/01_products.parquet, 03_product_family.parquet)
 """
@@ -88,6 +91,11 @@ def main():
         brand_mean = pop.groupby("brand")[s].transform("mean")  # skips NaN
         demeaned = pop[s] - brand_mean
         pop[f"{s}_demeaned"] = np.where(pop["brand_demeaned"], demeaned, pop[s])
+
+    # --- per-product signals, saved so nothing downstream (e.g. 10_build_app.py's
+    # per-note reception stats) needs to re-derive this formula from scratch -----
+    product_demand_cols = ["id"] + signals + [f"{s}_demeaned" for s in signals] + ["brand_demeaned"]
+    pop[product_demand_cols].to_parquet(IN_DIR / "04_product_demand.parquet", index=False)
 
     # --- aggregate to family level, weighted by fractional membership ----------
     fam = family.merge(

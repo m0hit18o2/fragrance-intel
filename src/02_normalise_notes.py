@@ -336,9 +336,15 @@ def main():
                     other = next(iter(pair - {tok}))
                     reasons.append(f"{r} (vs '{other}')")
             if tok in review_evidence:
+                # NOT PYTHONHASHSEED-dependent: {(o,s) for ...} is a set (hash-randomized
+                # iteration order per process), so an exact similarity tie (e.g.
+                # 'calone' vs 'calypsone'/'cascalone', both 0.80) used to pick whichever
+                # one the randomized order happened to put first. The explicit `x[0]`
+                # secondary key makes ties break alphabetically regardless of iteration
+                # order, so the result is deterministic without relying on any env var.
                 fuzzy_matches = sorted(
                     {(o, s) for o, s in review_evidence[tok] if s is not None},
-                    key=lambda x: -x[1],
+                    key=lambda x: (-x[1], x[0]),
                 )
                 contain_matches = sorted({o for o, s in review_evidence[tok] if s is None})
                 if fuzzy_matches:
@@ -387,10 +393,14 @@ def main():
         ((c, g) for c, g in {canonical_of[m]: group_of[m] for m in remaining}.items())
         if len(members) > 1
     }
+    # secondary key `kv[0]` (canonical name, ascending) makes size ties
+    # deterministic -- merge_groups.items()'s order inherits from iterating
+    # `remaining` (a set), so a bare size-only sort could tie-break on
+    # hash-randomized input order. Negate the count instead of reverse=True
+    # so ties still break alphabetically ascending, not descending.
     sized = sorted(
         merge_groups.items(),
-        key=lambda kv: len(canonical_group_products[kv[0]]),
-        reverse=True,
+        key=lambda kv: (-len(canonical_group_products[kv[0]]), kv[0]),
     )[:30]
 
     print("30 largest merge groups:")

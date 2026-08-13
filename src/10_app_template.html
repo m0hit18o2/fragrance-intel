@@ -2,23 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Fragrance Neighbour Explorer</title>
+<title>Fragrance Explorer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
     --bg:#faf9f7; --panel:#ffffff; --border:#e3e0da; --text:#2b2a28; --muted:#78746c;
     --accent:#7a5c3e; --accent-soft:#efe6da; --chip:#f1efe9; --chip-shared:#e7d8b8;
-    --good:#4c7a52; --bad:#a6564a;
+    --chip-shared-accord:#d9e3d3;
+    --good:#4c7a52; --bad:#a6564a; --warn:#a67a2e;
   }
   *{box-sizing:border-box;}
   body{
     margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
     background:var(--bg); color:var(--text); font-size:15px; line-height:1.45;
   }
-  header{padding:18px 24px 14px; border-bottom:1px solid var(--border); background:var(--panel);}
+  header{padding:14px 24px; border-bottom:1px solid var(--border); background:var(--panel);}
   header h1{margin:0 0 4px; font-size:20px; font-weight:650;}
   header p{margin:0; color:var(--muted); font-size:13px;}
-  .layout{display:flex; gap:20px; padding:20px 24px; max-width:1180px; margin:0 auto;}
+  .tabs{display:flex; gap:4px; padding:0 24px; background:var(--panel); border-bottom:1px solid var(--border);}
+  .tab-btn{
+    padding:10px 16px; border:none; background:none; font-size:14px; font-weight:600; color:var(--muted);
+    cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .layout{display:flex; gap:20px; padding:20px 24px; max-width:1280px; margin:0 auto;}
   .col-search{flex:0 0 320px; min-width:280px;}
   .col-detail{flex:1; min-width:0;}
   .panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px;}
@@ -29,7 +39,7 @@
   }
   input[type=text]:focus{outline:2px solid var(--accent-soft); border-color:var(--accent);}
   .hint{color:var(--muted); font-size:12px; margin:6px 2px 10px;}
-  .results{max-height:520px; overflow-y:auto; margin-top:10px;}
+  .results{max-height:420px; overflow-y:auto; margin-top:10px;}
   .result-row{
     padding:8px 9px; border-radius:7px; cursor:pointer; display:flex; justify-content:space-between;
     gap:8px; align-items:baseline;
@@ -48,23 +58,44 @@
     display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600;
     background:var(--accent-soft); color:var(--accent); white-space:nowrap;
   }
+  .badge.conf-high{background:#dfeee0; color:var(--good);}
+  .badge.conf-medium{background:#f4e9d2; color:var(--warn);}
+  .badge.conf-low{background:#f3dede; color:var(--bad);}
   .rating{font-size:14px; color:var(--text); white-space:nowrap;}
   .rating .star{color:#c8952e;}
   .section-label{
     font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
     margin:14px 0 6px;
   }
+  .subhint{font-size:12px; color:var(--muted); margin:0 0 8px;}
   .chips{display:flex; flex-wrap:wrap; gap:6px;}
   .chip{background:var(--chip); border-radius:6px; padding:4px 9px; font-size:12.5px;}
   .chip.shared{background:var(--chip-shared); font-weight:600;}
+  .chip.shared-accord{background:var(--chip-shared-accord); font-weight:600;}
+  .chip.removable{cursor:pointer; display:inline-flex; align-items:center; gap:5px;}
+  .chip.removable:hover{background:#f3dede;}
   .chip .pct{color:var(--muted); font-weight:400;}
+  .why-label{font-size:11px; color:var(--muted); margin-right:2px;}
+  .stat-row{display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px dashed var(--border);}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row .v{font-weight:600;}
+  .stat-row .delta-pos{color:var(--good);}
+  .stat-row .delta-neg{color:var(--bad);}
+  .two-col{display:flex; gap:16px; flex-wrap:wrap;}
+  .two-col > div{flex:1; min-width:220px;}
+  table.simple{width:100%; border-collapse:collapse; font-size:13px;}
+  table.simple th, table.simple td{padding:5px 7px; text-align:left; border-bottom:1px solid var(--border);}
+  table.simple th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase;}
+  table.simple td.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .tier-bar{display:flex; height:18px; border-radius:5px; overflow:hidden; margin-bottom:4px;}
+  .tier-bar span{display:block; height:100%;}
+  .tier-legend{display:flex; gap:12px; font-size:11.5px; color:var(--muted); flex-wrap:wrap;}
+  .tier-legend .sw{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px;}
 
   .nbr-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;}
   .nbr-controls label{font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; cursor:pointer;}
   .nbr-list{display:flex; flex-direction:column; gap:8px;}
-  .nbr-row{
-    border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#fffefc;
-  }
+  .nbr-row{border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#fffefc;}
   .nbr-row.clickable{cursor:pointer;}
   .nbr-row.clickable:hover{border-color:var(--accent);}
   .nbr-row.unreachable{opacity:.72;}
@@ -79,7 +110,12 @@
   .why .fam-diff{color:var(--bad);}
   .why .none{font-style:italic;}
   .not-in-catalog{font-size:11px; color:var(--muted); font-style:italic; margin-top:4px;}
-  footer{text-align:center; color:var(--muted); font-size:12px; padding:18px; }
+
+  .palette-empty{color:var(--muted); font-size:13px; font-style:italic;}
+  .notice{background:var(--accent-soft); border-radius:8px; padding:9px 12px; font-size:12.5px; color:var(--text); margin-bottom:10px;}
+  .zero-result{font-weight:600; color:var(--bad);}
+
+  footer{text-align:center; color:var(--muted); font-size:12px; padding:18px; max-width:900px; margin:0 auto;}
   ::-webkit-scrollbar{width:9px;}
   ::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
 </style>
@@ -87,48 +123,89 @@
 <body>
 
 <header>
-  <h1>Fragrance Neighbour Explorer</h1>
+  <h1>Fragrance Explorer</h1>
   <p id="subtitle">Loading…</p>
 </header>
 
-<div class="layout">
-  <div class="col-search">
-    <div class="panel">
-      <input type="text" id="search" placeholder="Search by name or brand…" autocomplete="off">
-      <div class="hint" id="resultCount"></div>
-      <div class="results" id="results"></div>
-    </div>
-  </div>
+<div class="tabs">
+  <button class="tab-btn active" id="tabBtnNotes" type="button">Note Explorer</button>
+  <button class="tab-btn" id="tabBtnProducts" type="button">Product Similarity</button>
+</div>
 
-  <div class="col-detail">
-    <div class="panel" id="productCard"></div>
-    <div class="panel" id="neighbourPanel"></div>
+<!-- ============================== TAB 1: NOTE EXPLORER ============================== -->
+<div class="tab-panel active" id="tabNotes">
+  <div class="layout">
+    <div class="col-search">
+      <div class="panel">
+        <input type="text" id="nSearch" placeholder="Search notes…" autocomplete="off">
+        <div class="hint" id="nResultCount"></div>
+        <div class="results" id="nResults"></div>
+      </div>
+    </div>
+    <div class="col-detail">
+      <div class="panel" id="noteCard"></div>
+      <div class="panel" id="notePairs"></div>
+      <div class="panel" id="noteSimilar"></div>
+      <div class="panel" id="noteReception"></div>
+      <div class="panel" id="noteTerritory"></div>
+      <div class="panel" id="noteExamples"></div>
+      <div class="panel" id="paletteBuilder"></div>
+    </div>
   </div>
 </div>
 
-<footer>
-  Note similarity: TF-IDF cosine over canonical notes (the best-performing representation tested).
-  Explanations are computed from each product's own note/family data, not modelled.
-</footer>
+<!-- ============================== TAB 2: PRODUCT SIMILARITY ============================== -->
+<div class="tab-panel" id="tabProducts">
+  <div class="layout">
+    <div class="col-search">
+      <div class="panel">
+        <input type="text" id="pSearch" placeholder="Search by name or brand…" autocomplete="off">
+        <div class="hint" id="pResultCount"></div>
+        <div class="results" id="pResults"></div>
+      </div>
+    </div>
+    <div class="col-detail">
+      <div class="panel" id="productCard"></div>
+      <div class="panel" id="neighbourPanel"></div>
+    </div>
+  </div>
+</div>
+
+<footer id="footer">Loading…</footer>
 
 <script id="payload" type="application/json">__PAYLOAD_JSON__</script>
 <script>
 (function(){
   "use strict";
   var DATA = JSON.parse(document.getElementById("payload").textContent);
-  var products = DATA.products;
-  var topIds = DATA.top_ids;
+
+  // ---------- tabs -----------------------------------------------------------
+  var tabBtnNotes = document.getElementById("tabBtnNotes");
+  var tabBtnProducts = document.getElementById("tabBtnProducts");
+  var tabNotes = document.getElementById("tabNotes");
+  var tabProducts = document.getElementById("tabProducts");
+  tabBtnNotes.addEventListener("click", function(){
+    tabBtnNotes.classList.add("active"); tabBtnProducts.classList.remove("active");
+    tabNotes.classList.add("active"); tabProducts.classList.remove("active");
+  });
+  tabBtnProducts.addEventListener("click", function(){
+    tabBtnProducts.classList.add("active"); tabBtnNotes.classList.remove("active");
+    tabProducts.classList.add("active"); tabNotes.classList.remove("active");
+  });
 
   document.getElementById("subtitle").textContent =
-    "Browsing the top " + DATA.meta.n_top_products.toLocaleString() +
-    " products by collection size (relation.have) · neighbours via " + DATA.meta.representation;
+    DATA.meta.n_notes.toLocaleString() + " canonical notes · top " +
+    DATA.meta.n_top_products.toLocaleString() + " products by collection size";
+  document.getElementById("footer").textContent =
+    DATA.tab2.meta.note + " Explanations (shared notes, shared accords, family) are computed " +
+    "from each product's own stored data, not modelled. Note-explorer figures are counts and " +
+    "co-occurrence statistics over the analysis population, not formulation advice.";
 
-  // ---------- fuzzy search (no libraries) ----------------------------------
+  // ---------- fuzzy search (shared, no libraries) -----------------------------
   function fuzzyScore(query, text){
     if (!query) return 0;
     var idx = text.indexOf(query);
-    if (idx !== -1) return 1000 - idx - text.length * 0.01; // substring hit, earlier & shorter = better
-    // subsequence fallback: all query chars appear in order, score by compactness
+    if (idx !== -1) return 1000 - idx - text.length * 0.01;
     var qi = 0, span = 0, start = -1;
     for (var i = 0; i < text.length && qi < query.length; i++){
       if (text[i] === query[qi]){
@@ -137,22 +214,368 @@
         span = i - start + 1;
       }
     }
-    if (qi < query.length) return -1; // not all chars found
+    if (qi < query.length) return -1;
     return 200 - span - text.length * 0.01;
   }
 
-  var searchIndex = topIds.map(function(id){
+  /* =========================================================================
+     TAB 1: NOTE EXPLORER
+     ========================================================================= */
+  var notes = DATA.tab1.notes;
+  var noteNames = Object.keys(notes).sort();
+  var ppmiLookup = DATA.tab1.ppmiLookup;
+  var population = DATA.tab1.population;
+  var territory = DATA.tab1.territory;
+
+  // reverse adjacency from ppmiLookup, built once: note -> [[partner, ppmi], ...]
+  var partnerMap = {};
+  Object.keys(ppmiLookup).forEach(function(key){
+    var parts = key.split("|"), a = parts[0], b = parts[1], v = ppmiLookup[key];
+    (partnerMap[a] = partnerMap[a] || []).push([b, v]);
+    (partnerMap[b] = partnerMap[b] || []).push([a, v]);
+  });
+
+  function ppmiFor(a, b){
+    if (a === b) return null;
+    var key = a < b ? a + "|" + b : b + "|" + a;
+    return Object.prototype.hasOwnProperty.call(ppmiLookup, key) ? ppmiLookup[key] : undefined;
+  }
+
+  var selectedNote = null;
+  var palette = [];
+
+  var nSearchIndex = noteNames.map(function(n){ return {id: n, text: n.toLowerCase()}; });
+
+  function runNoteSearch(query, excludeSet){
+    query = (query || "").trim().toLowerCase();
+    var resultsEl = document.getElementById("nResults");
+    var countEl = document.getElementById("nResultCount");
+    resultsEl.innerHTML = "";
+    var pool = excludeSet ? nSearchIndex.filter(function(e){ return !excludeSet.has(e.id); }) : nSearchIndex;
+
+    var scored;
+    if (!query){
+      scored = pool.slice(0, 30).map(function(e){ return {id: e.id, score: 0}; });
+      countEl.textContent = "Showing " + scored.length + " of " + pool.length.toLocaleString() + " — type to search";
+    } else {
+      scored = pool.map(function(e){ return {id: e.id, score: fuzzyScore(query, e.text)}; })
+                   .filter(function(e){ return e.score > -1; })
+                   .sort(function(a,b){ return b.score - a.score; })
+                   .slice(0, 30);
+      countEl.textContent = scored.length + " match" + (scored.length === 1 ? "" : "es");
+    }
+    if (scored.length === 0){
+      resultsEl.innerHTML = '<div class="empty">No matches.</div>';
+      return;
+    }
+    scored.forEach(function(e){
+      var note = notes[e.id];
+      var row = document.createElement("div");
+      row.className = "result-row" + (e.id === selectedNote ? " active" : "");
+      row.innerHTML = '<span class="rname"></span><span class="rbrand"></span>';
+      row.querySelector(".rname").textContent = e.id;
+      row.querySelector(".rbrand").textContent = note.family;
+      row.addEventListener("click", function(){ selectNote(e.id); });
+      resultsEl.appendChild(row);
+    });
+  }
+
+  function confBadgeClass(conf){
+    if (conf === "HIGH") return "conf-high";
+    if (conf === "MEDIUM") return "conf-medium";
+    if (conf === "LOW") return "conf-low";
+    return "";
+  }
+
+  function renderNoteCard(id){
+    var n = notes[id];
+    var el = document.getElementById("noteCard");
+    var famChips = n.familyNotes.map(function(x){ return '<span class="chip">' + x + '</span>'; }).join("")
+      || '<span class="hint">(no other notes on file)</span>';
+    var accordChips = n.accords.map(function(a){
+      return '<span class="chip">' + a[0] + ' <span class="pct">' + a[1].toFixed(1) + 'x</span></span>';
+    }).join("") || '<span class="hint">no eligible accords</span>';
+
+    var tierOrder = ["top","middle","base","flat"];
+    var tierColors = {top:"#c8952e", middle:"#7a5c3e", base:"#4c6a5c", flat:"#9a958c"};
+    var tierBar = tierOrder.map(function(t){
+      return n.tier[t] > 0 ? '<span style="width:' + n.tier[t] + '%;background:' + tierColors[t] + '"></span>' : "";
+    }).join("");
+    var tierLegend = tierOrder.map(function(t){
+      return '<span><span class="sw" style="background:' + tierColors[t] + '"></span>' + t + ' ' + n.tier[t].toFixed(0) + '%</span>';
+    }).join("");
+
+    el.innerHTML =
+      '<div class="card-head">' +
+        '<div><h2></h2><div class="brand-line"></div></div>' +
+        '<span class="badge"></span>' +
+      '</div>' +
+      '<div class="section-label">Family</div><div class="chips">' + famChips + '</div>' +
+      '<div class="section-label">Top accords by lift</div><div class="chips">' + accordChips + '</div>' +
+      '<div class="section-label">Tier distribution</div>' +
+      '<div class="tier-bar">' + tierBar + '</div><div class="tier-legend">' + tierLegend + '</div>';
+
+    el.querySelector("h2").textContent = id;
+    el.querySelector(".brand-line").textContent =
+      n.n.toLocaleString() + " products (" + n.pct.toFixed(2) + "% of the analysis population)";
+    el.querySelector(".badge").textContent = n.family;
+  }
+
+  function renderNotePairs(id){
+    var n = notes[id];
+    var el = document.getElementById("notePairs");
+    function list(items, kind){
+      if (!items.length) return '<div class="empty">none on file</div>';
+      return '<table class="simple"><tr><th>note</th><th class="num">' + kind + '</th></tr>' +
+        items.map(function(x){ return '<tr><td>' + x[0] + '</td><td class="num">' + x[1] + '</td></tr>'; }).join("") +
+        '</table>';
+    }
+    el.innerHTML =
+      '<div class="section-label">Pairs with</div>' +
+      '<p class="subhint">Common partners are raw co-occurrence counts — mostly backbone notes that show up ' +
+      'everywhere. Distinctive partners are ranked by PPMI lift — pairings that happen far more than chance, ' +
+      'which is what actually characterises this note.</p>' +
+      '<div class="two-col">' +
+        '<div><div class="section-label" style="margin-top:0;">Most common (raw co-occurrence)</div>' + list(n.common, "count") + '</div>' +
+        '<div><div class="section-label" style="margin-top:0;">Most distinctive (PPMI lift)</div>' + list(n.distinctive, "PPMI") + '</div>' +
+      '</div>';
+  }
+
+  function renderNoteSimilar(id){
+    var n = notes[id];
+    var el = document.getElementById("noteSimilar");
+    var rows = n.similar.map(function(x){
+      return '<tr><td>' + x[0] + '</td><td class="num">' + (x[1]*100).toFixed(1) + '%</td></tr>';
+    }).join("");
+    el.innerHTML =
+      '<div class="section-label">Similar notes (cosine, 50-d PPMI+SVD space)</div>' +
+      '<p class="subhint">Notes used in similar compositional roles — substitution candidates.</p>' +
+      (n.similar.length ? '<table class="simple"><tr><th>note</th><th class="num">similarity</th></tr>' + rows + '</table>'
+                          : '<div class="empty">none on file</div>');
+  }
+
+  function deltaSpan(val, pop){
+    var d = val - pop;
+    var cls = d > 0 ? "delta-pos" : (d < 0 ? "delta-neg" : "");
+    var sign = d > 0 ? "+" : "";
+    return '<span class="' + cls + '">' + sign + d.toFixed(3) + " vs population</span>";
+  }
+
+  function pctOrNA(v){ return v == null ? "n/a" : v.toFixed(1) + "%"; }
+
+  function renderNoteReception(id){
+    var n = notes[id];
+    var el = document.getElementById("noteReception");
+    var seasonRows = ["winter","spring","summer","autumn"].map(function(s){
+      return '<div class="stat-row"><span>' + s + '</span><span class="v">' + pctOrNA(n.season[s]) + ' <span class="hint" style="margin:0;">(pop ' + pctOrNA(population.season[s]) + ')</span></span></div>';
+    }).join("");
+    var genderLabels = {female:"female", femaleLeaning:"female-leaning", unisex:"unisex", maleLeaning:"male-leaning", male:"male"};
+    var genderRows = Object.keys(genderLabels).map(function(g){
+      return '<div class="stat-row"><span>' + genderLabels[g] + '</span><span class="v">' + pctOrNA(n.gender[g]) + ' <span class="hint" style="margin:0;">(pop ' + pctOrNA(population.gender[g]) + ')</span></span></div>';
+    }).join("");
+
+    el.innerHTML =
+      '<div class="section-label">Reception</div>' +
+      '<div class="stat-row"><span>Approval (brand-demeaned)</span><span class="v">' + n.reception.approval.toFixed(3) + ' — ' + deltaSpan(n.reception.approval, population.approval) + '</span></div>' +
+      '<div class="stat-row"><span>Desire (brand-demeaned)</span><span class="v">' + n.reception.desire.toFixed(3) + ' — ' + deltaSpan(n.reception.desire, population.desire) + '</span></div>' +
+      '<div class="hint">based on ' + n.n.toLocaleString() + ' products containing this note</div>' +
+      '<div class="two-col" style="margin-top:8px;">' +
+        '<div><div class="section-label" style="margin-top:0;">Season skew</div>' + seasonRows + '</div>' +
+        '<div><div class="section-label" style="margin-top:0;">Community gender skew</div>' + genderRows + '</div>' +
+      '</div>';
+  }
+
+  function renderNoteTerritory(id){
+    var n = notes[id];
+    var t = n.territory || {};
+    var el = document.getElementById("noteTerritory");
+    if (t.backbone){
+      el.innerHTML =
+        '<div class="section-label">Territory context</div>' +
+        '<p>This note\'s family (<strong>' + n.family + '</strong>) is the backbone family — table stakes, ' +
+        'excluded from the whitespace ranking rather than scored.</p>';
+      return;
+    }
+    var scoreTxt = (t.score == null) ? "n/a" : t.score.toFixed(3);
+    el.innerHTML =
+      '<div class="section-label">Territory context — ' + n.family + '</div>' +
+      '<div class="stat-row"><span>Whitespace score</span><span class="v">' + scoreTxt + '</span></div>' +
+      '<div class="stat-row"><span>Supply share</span><span class="v">' + (t.supplyShare != null ? (t.supplyShare*100).toFixed(1) + '%' : 'n/a') + '</span></div>' +
+      '<div class="stat-row"><span>Momentum</span><span class="v">' + (t.momentum != null ? t.momentum.toFixed(4) : 'n/a') + '</span></div>' +
+      '<div class="stat-row"><span>Confidence</span><span class="badge ' + confBadgeClass(t.confidence) + '">' + (t.confidence || "n/a") + '</span></div>';
+  }
+
+  function renderNoteExamples(id){
+    var n = notes[id];
+    var el = document.getElementById("noteExamples");
+    var rows = n.examples.map(function(p){
+      return '<tr><td>' + p.n + '</td><td>' + p.b + '</td><td class="num">' + (p.y || "—") + '</td>' +
+             '<td class="num">' + (p.r != null ? p.r.toFixed(2) : "—") + '</td></tr>';
+    }).join("");
+    el.innerHTML =
+      '<div class="section-label">Example fragrances (top ' + n.examples.length + ' by collection size)</div>' +
+      (n.examples.length
+        ? '<table class="simple"><tr><th>name</th><th>brand</th><th class="num">year</th><th class="num">rating</th></tr>' + rows + '</table>'
+        : '<div class="empty">no examples on file</div>');
+  }
+
+  // ---------- combination builder ---------------------------------------------
+  function renderPalette(){
+    var el = document.getElementById("paletteBuilder");
+    var addSearchVal = "";
+    var addInputEl = document.getElementById("paletteAdd");
+    if (addInputEl) addSearchVal = addInputEl.value;
+
+    var paletteChips = palette.length
+      ? palette.map(function(p){
+          return '<span class="chip removable" data-note="' + p + '">' + p + ' ✕</span>';
+        }).join("")
+      : '<span class="palette-empty">Add 2-5 notes to build a combination.</span>';
+
+    var body = "";
+    if (palette.length >= 2){
+      var sets = palette.map(function(p){ return new Set(notes[p].pids); });
+      var inter = sets.reduce(function(acc, s){ return new Set(Array.from(acc).filter(function(x){ return s.has(x); })); });
+      var count = inter.size;
+      body += '<div class="stat-row"><span>Products containing all ' + palette.length + ' notes</span>' +
+        '<span class="v' + (count === 0 ? ' zero-result' : '') + '">' + count.toLocaleString() +
+        (count === 0 ? ' — zero. That combination does not occur in the population.' : '') + '</span></div>';
+
+      // pairwise PPMI matrix
+      body += '<div class="section-label">Pairwise PPMI lift</div><table class="simple"><tr><th></th>';
+      palette.forEach(function(p){ body += '<th>' + p + '</th>'; });
+      body += '</tr>';
+      palette.forEach(function(p1){
+        body += '<tr><th>' + p1 + '</th>';
+        palette.forEach(function(p2){
+          if (p1 === p2){ body += '<td class="num">—</td>'; return; }
+          var v = ppmiFor(p1, p2);
+          body += '<td class="num">' + (v === undefined ? '<span class="hint" style="margin:0;">below reporting threshold</span>' : v.toFixed(2)) + '</td>';
+        });
+        body += '</tr>';
+      });
+      body += '</table>';
+
+      // family mix
+      var famCounts = {};
+      palette.forEach(function(p){ var f = notes[p].family; famCounts[f] = (famCounts[f] || 0) + 1; });
+      var famEntries = Object.keys(famCounts).map(function(f){ return [f, famCounts[f]]; }).sort(function(a,b){ return b[1]-a[1]; });
+      body += '<div class="section-label">Resulting family mix</div><div class="chips">' +
+        famEntries.map(function(fc){ return '<span class="chip">' + fc[0] + ' ' + Math.round(100*fc[1]/palette.length) + '%</span>'; }).join("") +
+        '</div>';
+      var domFamily = famEntries[0][0];
+      var domNote = palette.filter(function(p){ return notes[p].family === domFamily; })[0];
+      var domTerr = notes[domNote].territory || {};
+      body += '<p class="subhint">Lands in <strong>' + domFamily + '</strong>\'s territory' +
+        (domTerr.backbone ? ' (backbone — excluded from ranking).' :
+          (domTerr.score != null ? ' — whitespace score ' + domTerr.score.toFixed(3) + ', confidence ' + (domTerr.confidence || "n/a") + '.' : '.')) + '</p>';
+
+      // suggested additions
+      var candScores = {}, candCount = {};
+      palette.forEach(function(p){
+        (partnerMap[p] || []).forEach(function(pair){
+          var cand = pair[0], v = pair[1];
+          if (palette.indexOf(cand) !== -1) return;
+          candScores[cand] = (candScores[cand] || 0) + v;
+          candCount[cand] = (candCount[cand] || 0) + 1;
+        });
+      });
+      var suggestions = Object.keys(candScores).map(function(c){
+        return {note: c, mean: candScores[c] / candCount[c], n: candCount[c]};
+      }).sort(function(a,b){ return b.mean - a.mean; }).slice(0, 8);
+      body += '<div class="section-label">Suggested additions (by mean PPMI lift against the palette)</div>';
+      body += suggestions.length
+        ? '<table class="simple"><tr><th>note</th><th class="num">mean lift</th><th class="num">vs how many palette notes</th></tr>' +
+          suggestions.map(function(s){ return '<tr><td>' + s.note + '</td><td class="num">' + s.mean.toFixed(2) + '</td><td class="num">' + s.n + ' / ' + palette.length + '</td></tr>'; }).join("") +
+          '</table>'
+        : '<div class="empty">no covered candidates for this palette</div>';
+    } else {
+      body = '<p class="hint">Add at least 2 notes to see combination statistics.</p>';
+    }
+
+    el.innerHTML =
+      '<div class="section-label">Combination builder</div>' +
+      '<div class="notice">These are co-occurrence patterns observed in existing fragrances, not formulation advice. ' +
+      'No score here is a recommendation.</div>' +
+      '<div class="chips" style="margin-bottom:10px;">' + paletteChips + '</div>' +
+      '<input type="text" id="paletteAdd" placeholder="Add a note to the palette…" autocomplete="off" ' +
+        (palette.length >= 5 ? 'disabled placeholder="Palette full (5 notes max)"' : '') + '>' +
+      '<div class="results" id="paletteResults" style="max-height:180px;"></div>' +
+      '<div style="margin-top:12px;">' + body + '</div>';
+
+    el.querySelectorAll(".chip.removable").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        palette = palette.filter(function(p){ return p !== chip.dataset.note; });
+        renderPalette();
+      });
+    });
+
+    var addInput = document.getElementById("paletteAdd");
+    if (addInput && palette.length < 5){
+      addInput.value = addSearchVal;
+      addInput.addEventListener("input", function(e){ runPaletteSearch(e.target.value); });
+      if (addSearchVal) runPaletteSearch(addSearchVal);
+    }
+  }
+
+  function runPaletteSearch(query){
+    query = (query || "").trim().toLowerCase();
+    var el = document.getElementById("paletteResults");
+    if (!el) return;
+    if (!query){ el.innerHTML = ""; return; }
+    var excludeSet = new Set(palette);
+    var scored = nSearchIndex.filter(function(e){ return !excludeSet.has(e.id); })
+      .map(function(e){ return {id: e.id, score: fuzzyScore(query, e.text)}; })
+      .filter(function(e){ return e.score > -1; })
+      .sort(function(a,b){ return b.score - a.score; })
+      .slice(0, 12);
+    el.innerHTML = scored.length ? "" : '<div class="empty">No matches.</div>';
+    scored.forEach(function(e){
+      var row = document.createElement("div");
+      row.className = "result-row";
+      row.textContent = e.id;
+      row.addEventListener("click", function(){
+        if (palette.indexOf(e.id) === -1 && palette.length < 5) palette.push(e.id);
+        renderPalette();
+      });
+      el.appendChild(row);
+    });
+  }
+
+  function selectNote(id){
+    selectedNote = id;
+    renderNoteCard(id);
+    renderNotePairs(id);
+    renderNoteSimilar(id);
+    renderNoteReception(id);
+    renderNoteTerritory(id);
+    renderNoteExamples(id);
+    runNoteSearch(document.getElementById("nSearch").value);
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }
+
+  document.getElementById("nSearch").addEventListener("input", function(e){ runNoteSearch(e.target.value); });
+  runNoteSearch("");
+  selectNote(noteNames[0]);
+  renderPalette();
+
+  /* =========================================================================
+     TAB 2: PRODUCT SIMILARITY
+     ========================================================================= */
+  var products = DATA.tab2.products;
+  var topIds = DATA.tab2.top_ids;
+  var selectedId = null;
+  var excludeSameBrand = false;
+
+  var pSearchIndex = topIds.map(function(id){
     var p = products[id];
     return {id: id, text: (p.n + " " + p.b).toLowerCase()};
   });
 
-  var selectedId = null;
-  var excludeSameBrand = false;
-
-  function runSearch(query){
+  function runProductSearch(query){
     query = query.trim().toLowerCase();
-    var resultsEl = document.getElementById("results");
-    var countEl = document.getElementById("resultCount");
+    var resultsEl = document.getElementById("pResults");
+    var countEl = document.getElementById("pResultCount");
     resultsEl.innerHTML = "";
 
     var scored;
@@ -160,13 +583,12 @@
       scored = topIds.slice(0, 30).map(function(id){ return {id: id, score: 0}; });
       countEl.textContent = "Top " + scored.length + " by popularity — type to search " + topIds.length.toLocaleString() + " products";
     } else {
-      scored = searchIndex.map(function(e){ return {id: e.id, score: fuzzyScore(query, e.text)}; })
+      scored = pSearchIndex.map(function(e){ return {id: e.id, score: fuzzyScore(query, e.text)}; })
                            .filter(function(e){ return e.score > -1; })
                            .sort(function(a,b){ return b.score - a.score; })
                            .slice(0, 30);
       countEl.textContent = scored.length + " match" + (scored.length === 1 ? "" : "es");
     }
-
     if (scored.length === 0){
       resultsEl.innerHTML = '<div class="empty">No matches.</div>';
       return;
@@ -186,6 +608,11 @@
   function sharedNotes(a, b){
     var setB = new Set(b.notes);
     return a.notes.filter(function(n){ return setB.has(n); });
+  }
+  function sharedAccords(a, b){
+    var namesA = (a.acc || []).map(function(x){ return x[0]; });
+    var namesB = new Set((b.acc || []).map(function(x){ return x[0]; }));
+    return namesA.filter(function(n){ return namesB.has(n); });
   }
 
   function renderProductCard(id){
@@ -207,7 +634,7 @@
         '</div>' +
       '</div>' +
       '<div class="section-label">Notes</div><div class="chips notes-chips"></div>' +
-      '<div class="section-label">Top accords</div><div class="chips">' + accordsHtml + '</div>';
+      '<div class="section-label">Accords</div><div class="chips">' + accordsHtml + '</div>';
 
     el.querySelector("h2").textContent = p.n;
     el.querySelector(".brand-line").textContent = p.b + (p.y ? " · " + p.y : "") + (p.g ? " · " + p.g : "");
@@ -219,7 +646,7 @@
   function renderNeighbours(id){
     var p = products[id];
     var panel = document.getElementById("neighbourPanel");
-    var list = DATA.neighbours[id] || [];
+    var list = DATA.tab2.neighbours[id] || [];
 
     var filtered = list.filter(function(pair){
       if (!excludeSameBrand) return true;
@@ -237,10 +664,14 @@
       var nid = pair[0], sim = pair[1];
       var np = products[nid];
       var reachable = topIds.indexOf(nid) !== -1;
-      var shared = sharedNotes(p, np);
-      var sharedHtml = shared.length
-        ? shared.map(function(n){ return '<span class="chip shared">' + n + '</span>'; }).join("")
+      var sharedN = sharedNotes(p, np);
+      var sharedNotesHtml = sharedN.length
+        ? sharedN.map(function(n){ return '<span class="chip shared">' + n + '</span>'; }).join("")
         : '<span class="why none">no shared notes</span>';
+      var sharedA = sharedAccords(p, np);
+      var sharedAccordsHtml = sharedA.length
+        ? sharedA.map(function(n){ return '<span class="chip shared-accord">' + n + '</span>'; }).join("")
+        : '<span class="why none">no shared accords</span>';
       var famHtml = np.f && p.f
         ? (np.f === p.f ? '<span class="fam-same">same family (' + p.f + ')</span>'
                         : '<span class="fam-diff">' + p.f + ' vs ' + np.f + '</span>')
@@ -254,8 +685,10 @@
             '<span class="sim">' + (sim * 100).toFixed(1) + '% similar</span>' +
           '</div>' +
           '<div class="simbar"><div style="width:' + Math.max(sim, 0) * 100 + '%"></div></div>' +
-          '<div class="why"><strong style="font-weight:600;color:var(--text);">why:</strong> ' + sharedHtml + famHtml + '</div>' +
-          (reachable ? '' : '<div class="not-in-catalog">not in the browsable top ' + DATA.meta.n_top_products + ' — informational only</div>') +
+          '<div class="why"><span class="why-label">shared notes:</span>' + sharedNotesHtml + '</div>' +
+          '<div class="why"><span class="why-label">shared accords:</span>' + sharedAccordsHtml + '</div>' +
+          '<div class="why"><span class="why-label">family:</span>' + famHtml + '</div>' +
+          (reachable ? '' : '<div class="not-in-catalog">not in the browsable top ' + DATA.tab2.meta.n_top_products + ' — informational only</div>') +
         '</div>'
       );
     }).join("");
@@ -275,15 +708,12 @@
     selectedId = id;
     renderProductCard(id);
     renderNeighbours(id);
-    runSearch(document.getElementById("search").value);
+    runProductSearch(document.getElementById("pSearch").value);
     window.scrollTo({top: 0, behavior: "smooth"});
   }
 
-  document.getElementById("search").addEventListener("input", function(e){
-    runSearch(e.target.value);
-  });
-
-  runSearch("");
+  document.getElementById("pSearch").addEventListener("input", function(e){ runProductSearch(e.target.value); });
+  runProductSearch("");
   selectProduct(topIds[0]);
 })();
 </script>
